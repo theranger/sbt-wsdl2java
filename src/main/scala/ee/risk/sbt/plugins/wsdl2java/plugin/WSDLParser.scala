@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package ee.risk.sbt.plugins.wsdl2java
+package ee.risk.sbt.plugins.wsdl2java.plugin
 
 import sbt.{File, Logger}
 
 /**
-	* Created by The Ranger (ranger@risk.ee) on 2016-08-14
-	* for Baltnet Communications LLC (info@baltnet.ee)
-	*/
+ * Created by The Ranger (ranger@risk.ee) on 2016-08-14
+ * for Baltnet Communications LLC (info@baltnet.ee)
+ */
 trait WSDLParser {
 	def parse(log: Logger): Seq[File]
 }

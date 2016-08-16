@@ -14,26 +14,41 @@
  * limitations under the License.
  */
 
-package ee.risk.sbt.plugins.wsdl2java
+package ee.risk.sbt.plugins.wsdl2java.plugin
 
+import ee.risk.sbt.plugins.wsdl2java.cxf.CXFClient
+import ee.risk.sbt.plugins.wsdl2java.ssl.{SSLClient, SSLTrustManager}
 import sbt._
 import sbt.plugins.JvmPlugin
 
 /**
-	* Created by The Ranger (ranger@risk.ee) on 2016-08-14
-	* for Baltnet Communications LLC (info@baltnet.ee)
-	*/
+ * Created by The Ranger (ranger@risk.ee) on 2016-08-14
+ * for Baltnet Communications LLC (info@baltnet.ee)
+ */
 object Wsdl2Java extends AutoPlugin with WSDLParser {
 	override def requires = JvmPlugin
+
 	override def trigger = allRequirements
 
 	private val settings = new Settings(this)
-	private val cxfClient = new CXFClient(new File("temp"))
 	override val projectSettings = inConfig(Compile)(settings.defaults)
 
 	override def parse(log: Logger): Seq[File] = {
+		val url = new URL("https://localhost:44381/HelloWorld.svc?wsdl")
 
-		cxfClient.getWSDL(new URL("https://localhost:44381/HelloWorld.svc?wsdl"))
+		// Initialize local trust manager
+		val sslTrustManager = new SSLTrustManager(log, new File("temp"))
+		sslTrustManager.init("truststore.jks")
+
+		val sslClient = new SSLClient(log, sslTrustManager)
+		val sslCertificates = sslClient.queryCertificates(url)
+		sslTrustManager.loadCertificates(sslCertificates)
+
+		log.info("Reload SSL with trusted storage")
+		val trustedSSLClient = new SSLClient(log, sslTrustManager)
+		trustedSSLClient.queryCertificates(url)
+		val cxfClient = new CXFClient(log, new File("temp"), trustedSSLClient.getSSLContext)
+		val inpustStream = cxfClient.getWSDL(url)
 		Nil
 	}
 }

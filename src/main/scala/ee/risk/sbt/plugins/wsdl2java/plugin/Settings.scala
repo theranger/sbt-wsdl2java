@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package ee.risk.sbt.plugins.wsdl2java
+package ee.risk.sbt.plugins.wsdl2java.plugin
 
 import sbt.Keys._
 import sbt._
 
 /**
-	* Created by The Ranger (ranger@risk.ee) on 2016-08-14
-	* for Baltnet Communications LLC (info@baltnet.ee)
-	*/
+ * Created by The Ranger (ranger@risk.ee) on 2016-08-14
+ * for Baltnet Communications LLC (info@baltnet.ee)
+ */
 class Settings(parser: WSDLParser) {
+
 	import Settings.autoImport._
 
 	lazy val defaults = Settings.defaults ++ Seq(wsdl2java := parser.parse(streams.value.log))
 }
 
 object Settings {
+
 	import autoImport._
 
 	object autoImport {
