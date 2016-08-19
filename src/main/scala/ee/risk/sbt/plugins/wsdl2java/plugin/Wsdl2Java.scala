@@ -16,8 +16,11 @@
 
 package ee.risk.sbt.plugins.wsdl2java.plugin
 
-import ee.risk.sbt.plugins.wsdl2java.cxf.CXFClient
-import ee.risk.sbt.plugins.wsdl2java.ssl.{SSLClient, SSLTrustManager}
+import java.net.MalformedURLException
+import javax.net.ssl.{HttpsURLConnection, SSLHandshakeException}
+
+import ee.risk.sbt.plugins.wsdl2java.ssl.{SSLClient, SSLTrustManagerFactory, TrustStore}
+import ee.risk.sbt.plugins.wsdl2java.wsdl.{JAXWSClient, WSDLParser}
 import sbt._
 import sbt.plugins.JvmPlugin
 
@@ -27,28 +30,56 @@ import sbt.plugins.JvmPlugin
  */
 object Wsdl2Java extends AutoPlugin with WSDLParser {
 	override def requires = JvmPlugin
-
 	override def trigger = allRequirements
+	override val projectSettings = inConfig(Settings.autoImport.wsdl2java)(Settings.defaults(this))
+	val autoImport = Settings.autoImport
 
-	private val settings = new Settings(this)
-	override val projectSettings = inConfig(Compile)(settings.defaults)
+	override def parseWSDL(log: Logger, rootDir: String, paths: Map[String, String], trustStore: File) = {
+		val localTrustStore = new TrustStore(log)
+		localTrustStore.load(trustStore)
 
-	override def parse(log: Logger): Seq[File] = {
-		val url = new URL("https://localhost:44381/HelloWorld.svc?wsdl")
+		val defaultTrustStore = new TrustStore(log)
+		defaultTrustStore.load()
 
+		val jaxwsClient = new JAXWSClient(log)
+
+		for ((src, dst) <- paths) {
+			try {
+				val url = new URL(src)
+				log.info("Parsing WSDL from " + src)
+				val sslClient = createSSLClient(log, localTrustStore, defaultTrustStore)
+				HttpsURLConnection.setDefaultSSLSocketFactory(sslClient.getSSLContext.getSocketFactory)
+				jaxwsClient.generateWSDL(url, new File(rootDir), Seq("-Xnocompile", "-s", rootDir, "-p", dst))
+			}
+			catch {
+				case _: MalformedURLException => log.warn("Ignoring non-URL path " + src)
+			}
+		}
+	}
+
+	private def createSSLClient(log: Logger, localTrustStore: TrustStore, defaultTrustStore: TrustStore): SSLClient = {
 		// Initialize local trust manager
-		val sslTrustManager = new SSLTrustManager(log, new File("temp"))
-		sslTrustManager.init("truststore.jks")
+		val sslTrustManagerFactory = new SSLTrustManagerFactory(log, localTrustStore, defaultTrustStore)
+		new SSLClient(log, sslTrustManagerFactory.getTrustManagers)
+	}
 
-		val sslClient = new SSLClient(log, sslTrustManager)
-		val sslCertificates = sslClient.queryCertificates(url)
-		sslTrustManager.loadCertificates(sslCertificates)
+	override def queryCertificates(log: Logger, paths: Map[String, String], trustStore: File) = {
+		val localTrustStore = new TrustStore(log)
+		localTrustStore.load(trustStore)
 
-		log.info("Reload SSL with trusted storage")
-		val trustedSSLClient = new SSLClient(log, sslTrustManager)
-		trustedSSLClient.queryCertificates(url)
-		val cxfClient = new CXFClient(log, new File("temp"), trustedSSLClient.getSSLContext)
-		val inpustStream = cxfClient.getWSDL(url)
-		Nil
+		val defaultTrustStore = new TrustStore(log)
+		defaultTrustStore.load()
+
+		for ((src, dst) <- paths) {
+			try {
+				val url = new URL(src)
+				log.info("Looking up certificates for " + src)
+				createSSLClient(log, localTrustStore, defaultTrustStore).queryCertificates(url)
+			}
+			catch {
+				case _: SSLHandshakeException => localTrustStore.save(trustStore)
+				case _: MalformedURLException => log.warn("Ignoring non-URL path " + src)
+			}
+		}
 	}
 }

@@ -16,31 +16,24 @@
 
 package ee.risk.sbt.plugins.wsdl2java.ssl
 
-import javax.net.ssl._
+import javax.net.ssl.{TrustManagerFactory, X509TrustManager}
 
-import sbt.{Logger, URL}
+import sbt.Logger
 
 /**
- * Created by The Ranger (ranger@risk.ee) on 2016-08-14
+ * Created by The Ranger (ranger@risk.ee) on 2016-08-19
  * for Baltnet Communications LLC (info@baltnet.ee)
  */
-class SSLClient(log: Logger, trustManagers: List[X509TrustManager]) {
+class SSLTrustManagerFactory(log: Logger, localTrustStore: TrustStore, defaultTrustStore: TrustStore) {
+	private val localTrustManager = new LocalTrustManager(log, localTrustStore)
 
-	private val sslContext = SSLContext.getInstance("TLS")
-	sslContext.init(null, trustManagers.toArray, null)
+	private val defaultTrustManagerFactory= TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
+	defaultTrustManagerFactory.init(defaultTrustStore.getKeyStore)
 
-	def getSSLContext: SSLContext = sslContext
-
-	def queryCertificates(url: URL): Unit = {
-		val sslSocketFactory = sslContext.getSocketFactory
-		val sslSocket = sslSocketFactory.createSocket(url.getHost, url.getPort).asInstanceOf[SSLSocket]
-
-		try {
-			sslSocket.startHandshake()
-			log.info("All certificates are trusted")
-		}
-		finally {
-			sslSocket.close()
-		}
+	def getTrustManagers: List[X509TrustManager] = {
+		List(
+			localTrustManager,
+			defaultTrustManagerFactory.getTrustManagers.head.asInstanceOf[X509TrustManager]
+		)
 	}
 }

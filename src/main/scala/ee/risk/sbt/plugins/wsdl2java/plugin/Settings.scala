@@ -16,6 +16,7 @@
 
 package ee.risk.sbt.plugins.wsdl2java.plugin
 
+import ee.risk.sbt.plugins.wsdl2java.wsdl.WSDLParser
 import sbt.Keys._
 import sbt._
 
@@ -23,27 +24,25 @@ import sbt._
  * Created by The Ranger (ranger@risk.ee) on 2016-08-14
  * for Baltnet Communications LLC (info@baltnet.ee)
  */
-class Settings(parser: WSDLParser) {
-
-	import Settings.autoImport._
-
-	lazy val defaults = Settings.defaults ++ Seq(wsdl2java := parser.parse(streams.value.log))
-}
-
 object Settings {
-
 	import autoImport._
 
 	object autoImport {
-		lazy val cxfSettings = sbt.config("cxf")
-		lazy val cxfVersion = settingKey[String]("Apache CXF version")
-		lazy val wsdl2java = taskKey[Seq[File]]("Generates Java files from WSDL")
-		lazy val url = settingKey[String]("URL where WSDL file is located")
-		lazy val args = settingKey[String]("Default arguments for Apache CXF")
-		lazy val path = settingKey[File]("Path to store artifacts")
+		lazy val wsdl2java = config("wsdl2java") extend Compile
+
+		lazy val parseWSDL = taskKey[Unit]("Generates Java files from WSDL")
+		lazy val rootDir = settingKey[String]("Parent directory that will hold the artifacts subtrees (default: app)")
+
+		lazy val getCertificates = taskKey[Unit]("Get certificates for URL list")
+		lazy val urls = settingKey[Map[String, String]]("List of <wsdl, package_name> pairs")
+		lazy val trustStore = settingKey[String]("Path to trust store file (default: conf/truststore.jks")
 	}
 
-	val defaults: Seq[Def.Setting[_]] = Seq(
-		cxfVersion := "3.1.2"
+	def defaults(parser: WSDLParser): Seq[Def.Setting[_]] = Seq(
+		urls := Map[String, String](),
+		rootDir := "app",
+		trustStore := "conf" + Path.sep + "truststore.jks",
+		parseWSDL := parser.parseWSDL(streams.value.log, rootDir.value, urls.value, new File(trustStore.value)),
+		getCertificates := parser.queryCertificates(streams.value.log, urls.value, new File(trustStore.value))
 	)
 }

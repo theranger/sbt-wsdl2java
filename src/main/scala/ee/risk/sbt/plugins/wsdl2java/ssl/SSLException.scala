@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package ee.risk.sbt.plugins.wsdl2java.plugin
-
-import sbt.{File, Logger}
+package ee.risk.sbt.plugins.wsdl2java.ssl
 
 /**
- * Created by The Ranger (ranger@risk.ee) on 2016-08-14
+ * Created by The Ranger (ranger@risk.ee) on 2016-08-18
  * for Baltnet Communications LLC (info@baltnet.ee)
  */
-trait WSDLParser {
-	def parse(log: Logger): Seq[File]
-}
+class SSLException(message: String) extends Exception(message)

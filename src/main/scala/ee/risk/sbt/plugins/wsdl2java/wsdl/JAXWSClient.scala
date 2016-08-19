@@ -14,33 +14,23 @@
  * limitations under the License.
  */
 
-package ee.risk.sbt.plugins.wsdl2java.ssl
+package ee.risk.sbt.plugins.wsdl2java.wsdl
 
-import javax.net.ssl._
+import com.sun.tools.ws.WsImport
 
-import sbt.{Logger, URL}
+//import org.apache.cxf.tools.wsdlto.WSDLToJava
+import sbt.{File, Logger, URL}
 
 /**
  * Created by The Ranger (ranger@risk.ee) on 2016-08-14
  * for Baltnet Communications LLC (info@baltnet.ee)
  */
-class SSLClient(log: Logger, trustManagers: List[X509TrustManager]) {
+class JAXWSClient(log: Logger) {
 
-	private val sslContext = SSLContext.getInstance("TLS")
-	sslContext.init(null, trustManagers.toArray, null)
+	def generateWSDL(url: URL, directory: File, params: Seq[String]): Unit = {
+		if (!directory.exists()) throw new WSDLException("Directory does not exist: " + directory.getAbsolutePath)
+		java.lang.System.setProperty("javax.xml.accessExternalSchema", "all")
 
-	def getSSLContext: SSLContext = sslContext
-
-	def queryCertificates(url: URL): Unit = {
-		val sslSocketFactory = sslContext.getSocketFactory
-		val sslSocket = sslSocketFactory.createSocket(url.getHost, url.getPort).asInstanceOf[SSLSocket]
-
-		try {
-			sslSocket.startHandshake()
-			log.info("All certificates are trusted")
-		}
-		finally {
-			sslSocket.close()
-		}
+		WsImport.doMain((params ++ Seq(url.toString)).toArray)
 	}
 }

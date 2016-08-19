@@ -14,33 +14,15 @@
  * limitations under the License.
  */
 
-package ee.risk.sbt.plugins.wsdl2java.ssl
+package ee.risk.sbt.plugins.wsdl2java.wsdl
 
-import javax.net.ssl._
-
-import sbt.{Logger, URL}
+import sbt.{File, Logger}
 
 /**
  * Created by The Ranger (ranger@risk.ee) on 2016-08-14
  * for Baltnet Communications LLC (info@baltnet.ee)
  */
-class SSLClient(log: Logger, trustManagers: List[X509TrustManager]) {
-
-	private val sslContext = SSLContext.getInstance("TLS")
-	sslContext.init(null, trustManagers.toArray, null)
-
-	def getSSLContext: SSLContext = sslContext
-
-	def queryCertificates(url: URL): Unit = {
-		val sslSocketFactory = sslContext.getSocketFactory
-		val sslSocket = sslSocketFactory.createSocket(url.getHost, url.getPort).asInstanceOf[SSLSocket]
-
-		try {
-			sslSocket.startHandshake()
-			log.info("All certificates are trusted")
-		}
-		finally {
-			sslSocket.close()
-		}
-	}
+trait WSDLParser {
+	def parseWSDL(log: Logger, rootDir: String, paths: Map[String, String], trustStore: File)
+	def queryCertificates(log: Logger, paths: Map[String, String], trustStore: File)
 }
