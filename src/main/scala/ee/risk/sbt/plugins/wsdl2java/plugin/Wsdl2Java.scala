@@ -31,7 +31,7 @@ import sbt.plugins.JvmPlugin
 object Wsdl2Java extends AutoPlugin with WSDLParser {
 	override def requires = JvmPlugin
 	override def trigger = allRequirements
-	override val projectSettings = inConfig(Settings.autoImport.wsdl2java)(Settings.defaults(this))
+	override val projectSettings = inConfig(Compile)(Settings.defaults(this))
 	val autoImport = Settings.autoImport
 
 	override def parseWSDL(log: Logger, rootDir: String, paths: Map[String, String], trustStore: File) = {

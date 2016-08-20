@@ -28,21 +28,28 @@ object Settings {
 	import autoImport._
 
 	object autoImport {
-		lazy val wsdl2java = config("wsdl2java") extend Compile
+		lazy val wsdl2javaParseWSDL = taskKey[Unit]("Generates Java files from WSDL")
+		lazy val wsdl2javaGetCertificates = taskKey[Unit]("Get certificates for URL list")
 
-		lazy val parseWSDL = taskKey[Unit]("Generates Java files from WSDL")
-		lazy val rootDir = settingKey[String]("Parent directory that will hold the artifacts subtrees (default: app)")
-
-		lazy val getCertificates = taskKey[Unit]("Get certificates for URL list")
-		lazy val urls = settingKey[Map[String, String]]("List of <wsdl, package_name> pairs")
-		lazy val trustStore = settingKey[String]("Path to trust store file (default: conf/truststore.jks")
+		lazy val wsdl2javaSourceRoot = settingKey[String]("Parent directory that will hold the artifacts subtrees (default: app)")
+		lazy val wsdl2javaPathMap = settingKey[Map[String, String]]("List of <wsdl, package_name> pairs")
+		lazy val wsdl2javaTrustStoreFile = settingKey[String]("Path to trust store file (default: conf/truststore.jks")
 	}
 
 	def defaults(parser: WSDLParser): Seq[Def.Setting[_]] = Seq(
-		urls := Map[String, String](),
-		rootDir := "app",
-		trustStore := "conf" + Path.sep + "truststore.jks",
-		parseWSDL := parser.parseWSDL(streams.value.log, rootDir.value, urls.value, new File(trustStore.value)),
-		getCertificates := parser.queryCertificates(streams.value.log, urls.value, new File(trustStore.value))
+		wsdl2javaPathMap := Map[String, String](),
+		wsdl2javaSourceRoot := "app",
+		wsdl2javaTrustStoreFile := "conf" + Path.sep + "truststore.jks",
+
+		wsdl2javaParseWSDL := parser.parseWSDL(
+			streams.value.log,
+			wsdl2javaSourceRoot.value,
+			wsdl2javaPathMap.value,
+			new File(wsdl2javaTrustStoreFile.value)),
+
+		wsdl2javaGetCertificates := parser.queryCertificates(
+			streams.value.log,
+			wsdl2javaPathMap.value,
+			new File(wsdl2javaTrustStoreFile.value))
 	)
 }
