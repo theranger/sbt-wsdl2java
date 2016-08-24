@@ -32,20 +32,23 @@ object Settings {
 		lazy val wsdl2javaGetCertificates = taskKey[Unit]("Get certificates for URL list")
 
 		lazy val wsdl2javaSourceRoot = settingKey[String]("Parent directory that will hold the artifacts subtrees (default: app)")
-		lazy val wsdl2javaPathMap = settingKey[Map[String, String]]("List of <wsdl, package_name> pairs")
+		lazy val wsdl2javaPathMap = settingKey[Map[String, String]]("Map of <wsdl, package_name> pairs")
 		lazy val wsdl2javaTrustStoreFile = settingKey[String]("Path to trust store file (default: conf/truststore.jks")
+		lazy val wsdl2javaBindingFiles = settingKey[Seq[String]]("List of custom binding files (default: empty")
 	}
 
 	def defaults(parser: WSDLParser): Seq[Def.Setting[_]] = Seq(
 		wsdl2javaPathMap := Map[String, String](),
 		wsdl2javaSourceRoot := "app",
 		wsdl2javaTrustStoreFile := "conf" + Path.sep + "truststore.jks",
+		wsdl2javaBindingFiles := Seq[String](),
 
 		wsdl2javaParseWSDL := parser.parseWSDL(
 			streams.value.log,
 			wsdl2javaSourceRoot.value,
 			wsdl2javaPathMap.value,
-			new File(wsdl2javaTrustStoreFile.value)),
+			new File(wsdl2javaTrustStoreFile.value),
+			wsdl2javaBindingFiles.value),
 
 		wsdl2javaGetCertificates := parser.queryCertificates(
 			streams.value.log,

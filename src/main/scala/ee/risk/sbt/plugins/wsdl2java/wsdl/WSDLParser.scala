@@ -23,6 +23,6 @@ import sbt.{File, Logger}
  * for Baltnet Communications LLC (info@baltnet.ee)
  */
 trait WSDLParser {
-	def parseWSDL(log: Logger, rootDir: String, paths: Map[String, String], trustStore: File)
+	def parseWSDL(log: Logger, rootDir: String, paths: Map[String, String], trustStore: File, bindings: Seq[String])
 	def queryCertificates(log: Logger, paths: Map[String, String], trustStore: File)
 }
