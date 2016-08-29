@@ -43,7 +43,7 @@ object Settings {
 		wsdl2javaSourceRoot := "app",
 		wsdl2javaTrustStoreFile := "conf" + Path.sep + "truststore.jks",
 		wsdl2javaBindingFiles := Seq[String](),
-		wsdl2javaAuthFile := String,
+		wsdl2javaAuthFile := "",
 
 		wsdl2javaParseWSDL := parser.parseWSDL(
 			streams.value.log,
