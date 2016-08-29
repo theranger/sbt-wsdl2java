@@ -34,6 +34,10 @@ object Wsdl2Java extends AutoPlugin with WSDLParser {
 	override val projectSettings = inConfig(Compile)(Settings.defaults(this))
 	val autoImport = Settings.autoImport
 
+	def defaultSettings: Seq[Def.Setting[_]] = {
+		Settings.defaults(this)
+	}
+
 	override def parseWSDL(log: Logger,
 												 rootDir: String,
 												 paths: Map[String, String],
