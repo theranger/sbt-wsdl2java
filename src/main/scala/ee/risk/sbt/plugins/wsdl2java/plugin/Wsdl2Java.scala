@@ -34,7 +34,12 @@ object Wsdl2Java extends AutoPlugin with WSDLParser {
 	override val projectSettings = inConfig(Compile)(Settings.defaults(this))
 	val autoImport = Settings.autoImport
 
-	override def parseWSDL(log: Logger, rootDir: String, paths: Map[String, String], trustStore: File, bindings: Seq[String]) = {
+	override def parseWSDL(log: Logger,
+												 rootDir: String,
+												 paths: Map[String, String],
+												 trustStore: File,
+												 bindings: Seq[String],
+												 authFile: String) = {
 		val localTrustStore = new TrustStore(log)
 		localTrustStore.load(trustStore)
 
@@ -42,10 +47,14 @@ object Wsdl2Java extends AutoPlugin with WSDLParser {
 		defaultTrustStore.load()
 
 		val jaxwsClient = new JAXWSClient(log)
-		var bindingArgs = Seq[String]()
+		var args = Seq[String]()
 
 		for (binding <- bindings) {
-			bindingArgs ++= Seq("-b", binding)
+			args ++= Seq("-b", binding)
+		}
+
+		if (!authFile.isEmpty) {
+			args ++= Seq("-Xauthfile", authFile)
 		}
 
 		for ((src, dst) <- paths) {
@@ -54,7 +63,10 @@ object Wsdl2Java extends AutoPlugin with WSDLParser {
 				log.info("Parsing WSDL from " + src)
 				val sslClient = createSSLClient(log, localTrustStore, defaultTrustStore)
 				HttpsURLConnection.setDefaultSSLSocketFactory(sslClient.getSSLContext.getSocketFactory)
-				jaxwsClient.generateWSDL(url, new File(rootDir), Seq("-Xnocompile", "-s", rootDir, "-p", dst) ++ bindingArgs)
+				jaxwsClient.generateWSDL(
+					url,
+					new File(rootDir),
+					Seq("-Xnocompile", "-s", rootDir, "-p", dst) ++ args)
 			}
 			catch {
 				case _: MalformedURLException => log.warn("Ignoring non-URL path " + src)
