@@ -32,8 +32,14 @@ class SSLClient(log: Logger, trustManagers: List[X509TrustManager]) {
 	def getSSLContext: SSLContext = sslContext
 
 	def queryCertificates(url: URL): Unit = {
+		if (url.getProtocol != "https") {
+			log.info("Skipping non-encrypted URL " + url.toString)
+			return
+		}
+
+		val port = if (url.getPort <= 0) url.getDefaultPort else url.getPort
 		val sslSocketFactory = sslContext.getSocketFactory
-		val sslSocket = sslSocketFactory.createSocket(url.getHost, url.getPort).asInstanceOf[SSLSocket]
+		val sslSocket = sslSocketFactory.createSocket(url.getHost, port).asInstanceOf[SSLSocket]
 
 		try {
 			sslSocket.startHandshake()
